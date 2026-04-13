@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\DTO\UserDTO;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -22,10 +23,13 @@ class AuthController extends Controller
             'password' => $request->password ,
         ]);
 
+        $token = $user->createToken('token')->plainTextToken ;
+
         return response()->json([
             'status' => "succes" ,
             'message' => "create user to database" ,
             'data' => $user ,
+            'token' => $token
         ],201);
      }
 
@@ -37,7 +41,7 @@ class AuthController extends Controller
          'password' => 'required|string' ,
       ]) ;
 
-      
+    
        if(!Auth::attempt($validate)){
          return response()->json([
             'status' => 'erorr' ,
@@ -45,10 +49,23 @@ class AuthController extends Controller
          ],422);
        }
 
+       $user = Auth::user();
+       $token = $user->createToken('token')->plainTextToken ;
+       $dto = new UserDTO($user->id,$user->name,$user->email);
+       
        return response()->json([
            'status' => 'success' ,
            'message' => 'login successfully' ,
-           'data' => Auth::user() ,
+           'data' => $dto ,
+           'token' => $token
        ],200);
+     }
+
+     public function logout(Request $request){
+        $request->user()->currentAccessToken()->delete();
+        return response()->json([
+            'status' => 'suceess',
+            'message' => 'logout successfully',
+        ]);
      }
 }
